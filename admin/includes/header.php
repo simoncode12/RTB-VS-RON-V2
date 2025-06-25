@@ -19,6 +19,8 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="../asset/css/style.css" rel="stylesheet">
+    <!-- SweetAlert2 for better notifications -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
     <?php if (isset($_SESSION['user_id'])): ?>
