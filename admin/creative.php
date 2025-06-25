@@ -136,46 +136,68 @@ if ($campaign_id) {
 
 <div class="row">
     <div class="col-12">
-        <h1 class="h3 mb-4">
-            <i class="fas fa-images"></i> Creative Management
-            <small class="text-muted">Manage campaign creatives and ads</small>
-        </h1>
-        
-        <div class="text-muted mb-3">
-            <small>
-                <i class="fas fa-clock"></i> Current Time (UTC): <?php echo $current_timestamp; ?> | 
-                <i class="fas fa-user"></i> Logged in as: <?php echo htmlspecialchars($current_user); ?>
-            </small>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 mb-2 text-gradient">
+                    <i class="fas fa-images me-2"></i> Creative Management
+                </h1>
+                <p class="text-muted mb-0">Create and manage stunning advertising creatives</p>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="text-muted small">
+                    <i class="fas fa-clock me-1"></i> <?php echo $current_timestamp; ?>
+                </div>
+                <div class="text-muted small">
+                    <i class="fas fa-user me-1"></i> <?php echo htmlspecialchars($current_user); ?>
+                </div>
+            </div>
         </div>
         
         <?php if ($campaign && $is_new_campaign): ?>
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> Campaign "<strong><?php echo htmlspecialchars($campaign['name']); ?></strong>" was created successfully. Now add creatives for this campaign.
+            <div class="alert alert-success d-flex align-items-center">
+                <i class="fas fa-check-circle me-3 fs-4"></i>
+                <div>
+                    <strong>Campaign Created Successfully!</strong><br>
+                    <small>Campaign "<strong><?php echo htmlspecialchars($campaign['name']); ?></strong>" is ready. Now add some creative content to start your advertising campaign.</small>
+                </div>
             </div>
         <?php endif; ?>
     </div>
 </div>
 
 <?php if ($message): ?>
-    <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show">
-        <?php echo htmlspecialchars($message); ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show d-flex align-items-center">
+        <i class="fas fa-<?php echo $message_type === 'success' ? 'check-circle' : ($message_type === 'danger' ? 'exclamation-triangle' : 'info-circle'); ?> me-3 fs-4"></i>
+        <div class="flex-grow-1">
+            <?php echo htmlspecialchars($message); ?>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 <?php endif; ?>
 
 <div class="row">
     <!-- Create New Creative -->
     <div class="col-lg-5 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-plus"></i> Create Creative</h5>
+        <div class="card creative-card">
+            <div class="card-header d-flex align-items-center">
+                <div class="me-3">
+                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="fas fa-plus text-white"></i>
+                    </div>
+                </div>
+                <div>
+                    <h5 class="mb-0">Create New Creative</h5>
+                    <small class="text-muted">Design your advertising content</small>
+                </div>
             </div>
             <div class="card-body">
                 <form method="POST" id="creativeForm">
-                    <div class="mb-3">
-                        <label for="campaign_id" class="form-label">Campaign *</label>
+                    <div class="mb-4">
+                        <label for="campaign_id" class="form-label">
+                            <i class="fas fa-bullhorn me-2"></i>Select Campaign *
+                        </label>
                         <select class="form-select" id="campaign_id" name="campaign_id" required>
-                            <option value="">Select Campaign</option>
+                            <option value="">Choose a campaign...</option>
                             <?php foreach ($campaigns as $camp): ?>
                                 <option value="<?php echo $camp['id']; ?>" <?php echo ($campaign_id == $camp['id']) ? 'selected' : ''; ?>>
                                     [<?php echo strtoupper($camp['type']); ?>] <?php echo htmlspecialchars($camp['name']); ?> - <?php echo htmlspecialchars($camp['advertiser_name']); ?>
@@ -185,55 +207,94 @@ if ($campaign_id) {
                     </div>
                     
                     <?php if ($campaign): ?>
-                        <div class="alert alert-light">
-                            <strong>Selected Campaign:</strong> <?php echo htmlspecialchars($campaign['name']); ?><br>
-                            <strong>Type:</strong> <span class="badge bg-<?php echo $campaign['type'] == 'rtb' ? 'primary' : 'success'; ?>"><?php echo strtoupper($campaign['type']); ?></span>
-                            <strong>Advertiser:</strong> <?php echo htmlspecialchars($campaign['advertiser_name']); ?>
+                        <div class="alert alert-light border-start border-4 border-primary">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-bullhorn text-primary me-2"></i>
+                                <strong>Selected Campaign</strong>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Campaign Name</small>
+                                    <strong><?php echo htmlspecialchars($campaign['name']); ?></strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Type</small>
+                                    <span class="badge bg-<?php echo $campaign['type'] == 'rtb' ? 'primary' : 'success'; ?>">
+                                        <?php echo strtoupper($campaign['type']); ?>
+                                    </span>
+                                </div>
+                                <div class="col-12">
+                                    <small class="text-muted d-block">Advertiser</small>
+                                    <strong><?php echo htmlspecialchars($campaign['advertiser_name']); ?></strong>
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- RTB Campaign with endpoint -->
                         <?php if ($campaign['type'] == 'rtb' && !empty($campaign['endpoint_url'])): ?>
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle"></i> 
-                                <strong>RTB Campaign with External Endpoint</strong><br>
-                                This campaign is configured to use an external RTB endpoint:<br>
-                                <small><?php echo htmlspecialchars(substr($campaign['endpoint_url'], 0, 60) . (strlen($campaign['endpoint_url']) > 60 ? '...' : '')); ?></small>
-                                <hr>
-                                <div class="text-muted">
-                                    <small>For RTB campaigns, creative content will be provided by the RTB endpoint response.
-                                    You only need to configure size and bid parameters.</small>
+                            <div class="alert alert-info border-start border-4 border-info">
+                                <div class="d-flex align-items-start">
+                                    <i class="fas fa-exchange-alt text-info me-3 mt-1"></i>
+                                    <div class="flex-grow-1">
+                                        <strong>RTB External Endpoint Campaign</strong>
+                                        <p class="mb-2 mt-1">This campaign uses an external RTB endpoint for dynamic content delivery.</p>
+                                        <div class="bg-light p-2 rounded mt-2">
+                                            <small class="font-monospace text-break">
+                                                <?php echo htmlspecialchars(substr($campaign['endpoint_url'], 0, 60) . (strlen($campaign['endpoint_url']) > 60 ? '...' : '')); ?>
+                                            </small>
+                                        </div>
+                                        <hr class="my-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            You only need to configure size and bid parameters. Creative content will be provided dynamically.
+                                        </small>
+                                    </div>
                                 </div>
                             </div>
                         <?php endif; ?>
                         
                         <div class="mb-3">
-                            <label for="name" class="form-label">Creative Name *</label>
-                            <input type="text" class="form-control" id="name" name="name" required>
+                            <label for="name" class="form-label">
+                                <i class="fas fa-tag me-2"></i>Creative Name *
+                            </label>
+                            <input type="text" class="form-control" id="name" name="name" required 
+                                   placeholder="e.g., Summer Sale Banner 300x250">
                         </div>
                         
-                        <div class="row">
-                            <div class="col-6 mb-3">
-                                <label for="width" class="form-label">Width *</label>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="width" class="form-label">
+                                    <i class="fas fa-expand-arrows-alt me-2"></i>Ad Size *
+                                </label>
                                 <select class="form-select" id="width" name="width" required onchange="updateHeight()">
-                                    <option value="">Select Size</option>
+                                    <option value="">Choose size...</option>
                                     <?php foreach (getBannerSizes() as $size => $label): ?>
                                         <option value="<?php echo explode('x', $size)[0]; ?>" data-height="<?php echo explode('x', $size)[1]; ?>">
-                                            <?php echo $size; ?>
+                                            <?php echo $label; ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <div class="col-6 mb-3">
-                                <label for="height" class="form-label">Height *</label>
-                                <input type="number" class="form-control" id="height" name="height" required readonly>
+                            <div class="col-md-6">
+                                <label for="height" class="form-label">Height (auto)</label>
+                                <input type="number" class="form-control" id="height" name="height" required readonly 
+                                       style="background-color: #f8f9fa;">
                             </div>
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="bid_amount" class="form-label">Bid Amount ($) *</label>
-                            <input type="number" class="form-control" id="bid_amount" name="bid_amount" 
-                                   step="0.0001" min="0" required>
-                            <div class="form-text">Amount you're willing to bid for this creative</div>
+                        <div class="mb-4">
+                            <label for="bid_amount" class="form-label">
+                                <i class="fas fa-dollar-sign me-2"></i>Bid Amount (USD) *
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="bid_amount" name="bid_amount" 
+                                       step="0.0001" min="0.0001" required placeholder="0.0050">
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Set your maximum bid per impression. Higher bids increase win probability.
+                            </div>
                         </div>
                         
                         <!-- Hide creative type for RTB campaigns with endpoints -->
@@ -304,100 +365,140 @@ if ($campaign_id) {
     
     <!-- Existing Creatives -->
     <div class="col-lg-7 mb-4">
-        <div class="card">
+        <div class="card creative-card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-list"></i> Creatives</h5>
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="fas fa-list text-white"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">Creative Library</h5>
+                        <small class="text-muted">Manage your advertising creatives</small>
+                    </div>
+                </div>
                 <?php if ($campaign): ?>
-                    <span class="badge bg-primary"><?php echo count($creatives); ?> Creatives</span>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="badge bg-primary fs-6"><?php echo count($creatives); ?> Creatives</span>
+                        <?php if (!empty($creatives)): ?>
+                            <button class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-download me-1"></i>Export
+                            </button>
+                        <?php endif; ?>
+                    </div>
                 <?php endif; ?>
             </div>
             <div class="card-body">
                 <?php if (!$campaign): ?>
-                    <div class="text-center py-4">
-                        <i class="fas fa-images fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">Select a campaign to view and manage creatives.</p>
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-images text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
+                        </div>
+                        <h5 class="text-muted mb-2">No Campaign Selected</h5>
+                        <p class="text-muted mb-4">Select a campaign from the dropdown above to view and manage its creatives.</p>
+                        <div class="d-flex justify-content-center">
+                            <button class="btn btn-outline-primary" onclick="document.getElementById('campaign_id').focus()">
+                                <i class="fas fa-search me-2"></i>Choose Campaign
+                            </button>
+                        </div>
                     </div>
                 <?php elseif (empty($creatives)): ?>
-                    <div class="text-center py-4">
-                        <i class="fas fa-images fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">No creatives found for this campaign.</p>
-                        <p class="text-muted">Create your first creative using the form on the left.</p>
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-plus-circle text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
+                        </div>
+                        <h5 class="text-muted mb-2">No Creatives Yet</h5>
+                        <p class="text-muted mb-4">This campaign doesn't have any creatives. Create your first one to start advertising!</p>
+                        <div class="d-flex justify-content-center">
+                            <button class="btn btn-primary" onclick="document.getElementById('name').focus()">
+                                <i class="fas fa-plus me-2"></i>Create First Creative
+                            </button>
+                        </div>
                     </div>
                 <?php else: ?>
-                    <div class="row">
+                    <div class="creative-grid">
                         <?php foreach ($creatives as $creative): ?>
-                            <div class="col-md-6 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h6 class="card-title"><?php echo htmlspecialchars($creative['name']); ?></h6>
-                                        <div class="mb-2">
-                                            <span class="badge bg-info"><?php echo $creative['width']; ?>x<?php echo $creative['height']; ?></span>
+                            <div class="creative-card">
+                                <div class="card-body p-3">
+                                    <div class="creative-preview-container">
+                                        <?php if ($campaign['type'] == 'rtb' && !empty($campaign['endpoint_url']) && $creative['creative_type'] == 'third_party'): ?>
+                                            <div class="text-center">
+                                                <i class="fas fa-exchange-alt text-primary fs-2 mb-2"></i>
+                                                <div class="small text-muted">RTB External Content</div>
+                                            </div>
+                                            <div class="creative-type-badge">RTB</div>
+                                        <?php elseif ($creative['creative_type'] == 'image' && $creative['image_url']): ?>
+                                            <img src="<?php echo htmlspecialchars($creative['image_url']); ?>" 
+                                                 class="img-fluid rounded" 
+                                                 style="max-height: 100px; max-width: 100%; object-fit: contain;"
+                                                 alt="Creative Preview">
+                                            <div class="creative-type-badge">IMAGE</div>
+                                        <?php elseif ($creative['creative_type'] == 'video' && $creative['video_url']): ?>
+                                            <div class="text-center">
+                                                <i class="fas fa-play-circle text-primary fs-2 mb-2"></i>
+                                                <div class="small text-muted">Video Content</div>
+                                            </div>
+                                            <div class="creative-type-badge">VIDEO</div>
+                                        <?php else: ?>
+                                            <div class="text-center">
+                                                <i class="fas fa-code text-info fs-2 mb-2"></i>
+                                                <div class="small text-muted">HTML Content</div>
+                                            </div>
+                                            <div class="creative-type-badge">HTML</div>
+                                        <?php endif; ?>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <h6 class="mb-2 fw-bold"><?php echo htmlspecialchars($creative['name']); ?></h6>
+                                        <div class="d-flex flex-wrap gap-1 mb-2">
+                                            <span class="badge bg-light text-dark"><?php echo $creative['width']; ?>×<?php echo $creative['height']; ?></span>
                                             <span class="badge bg-success"><?php echo formatCurrency($creative['bid_amount']); ?></span>
                                             <span class="badge bg-secondary"><?php echo ucfirst($creative['creative_type']); ?></span>
-                                            
-                                            <?php if ($campaign['type'] == 'rtb' && !empty($campaign['endpoint_url']) && $creative['creative_type'] == 'third_party'): ?>
-                                                <span class="badge bg-primary">RTB External</span>
-                                            <?php endif; ?>
                                         </div>
                                         
                                         <?php if ($campaign['type'] == 'rtb' && !empty($campaign['endpoint_url']) && $creative['creative_type'] == 'third_party'): ?>
-                                            <div class="mb-2 alert alert-secondary">
-                                                <i class="fas fa-exchange-alt"></i> RTB External Content<br>
-                                                <small class="text-muted">Creative content will be provided dynamically by the RTB endpoint</small>
+                                            <div class="alert alert-info p-2 mb-2">
+                                                <small>
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    Content provided by RTB endpoint
+                                                </small>
                                             </div>
-                                        <?php elseif ($creative['creative_type'] == 'image' && $creative['image_url']): ?>
+                                        <?php elseif (!($campaign['type'] == 'rtb' && !empty($campaign['endpoint_url']) && $creative['creative_type'] == 'third_party')): ?>
                                             <div class="mb-2">
-                                                <img src="<?php echo htmlspecialchars($creative['image_url']); ?>" 
-                                                     class="img-fluid border rounded" 
-                                                     style="max-height: 100px; max-width: 100%;"
-                                                     alt="Creative Preview">
-                                            </div>
-                                        <?php elseif ($creative['creative_type'] == 'video' && $creative['video_url']): ?>
-                                            <div class="mb-2">
-                                                <video width="100%" height="60" style="max-width: 150px;">
-                                                    <source src="<?php echo htmlspecialchars($creative['video_url']); ?>" type="video/mp4">
-                                                </video>
-                                            </div>
-                                        <?php elseif ($creative['creative_type'] == 'html5' || $creative['creative_type'] == 'third_party'): ?>
-                                            <div class="mb-2">
-                                                <div class="text-muted small">
-                                                    <strong>HTML Content Preview:</strong><br>
-                                                    <code class="d-block p-2 bg-light" style="max-height: 80px; overflow: auto; font-size: 0.75rem;">
-                                                        <?php echo htmlspecialchars(substr($creative['html_content'], 0, 200) . (strlen($creative['html_content']) > 200 ? '...' : '')); ?>
-                                                    </code>
-                                                </div>
+                                                <small class="text-muted d-block mb-1">
+                                                    <i class="fas fa-link me-1"></i><strong>Click URL:</strong>
+                                                </small>
+                                                <small class="text-break">
+                                                    <a href="<?php echo htmlspecialchars($creative['click_url']); ?>" target="_blank" 
+                                                       class="text-decoration-none text-primary">
+                                                        <?php echo htmlspecialchars(substr($creative['click_url'], 0, 35) . (strlen($creative['click_url']) > 35 ? '...' : '')); ?>
+                                                    </a>
+                                                </small>
                                             </div>
                                         <?php endif; ?>
                                         
-                                        <!-- Only show click URL for non-RTB external creatives -->
-                                        <?php if (!($campaign['type'] == 'rtb' && !empty($campaign['endpoint_url']) && $creative['creative_type'] == 'third_party')): ?>
-                                            <div class="text-muted small mb-2">
-                                                <strong>Click URL:</strong><br>
-                                                <a href="<?php echo htmlspecialchars($creative['click_url']); ?>" target="_blank" class="text-decoration-none">
-                                                    <?php echo htmlspecialchars(substr($creative['click_url'], 0, 40) . (strlen($creative['click_url']) > 40 ? '...' : '')); ?>
-                                                </a>
-                                            </div>
-                                        <?php endif; ?>
-                                        
-                                        <div class="text-muted small">
-                                            Created: <?php echo date('M j, Y', strtotime($creative['created_at'])); ?>
+                                        <div class="text-muted">
+                                            <small>
+                                                <i class="fas fa-calendar me-1"></i>
+                                                Created <?php echo date('M j, Y', strtotime($creative['created_at'])); ?>
+                                            </small>
                                         </div>
                                     </div>
-                                    <div class="card-footer">
-                                        <div class="btn-group btn-group-sm w-100">
-                                            <button class="btn btn-outline-primary" data-bs-toggle="tooltip" title="Edit">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="btn btn-outline-success" data-bs-toggle="tooltip" title="Preview">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="btn btn-outline-info" data-bs-toggle="tooltip" title="Stats">
-                                                <i class="fas fa-chart-bar"></i>
-                                            </button>
-                                            <button class="btn btn-outline-danger btn-delete" data-bs-toggle="tooltip" title="Delete">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
+                                    
+                                    <div class="creative-actions">
+                                        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="tooltip" title="Edit Creative">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-success btn-sm" data-bs-toggle="tooltip" title="Preview">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-info btn-sm" data-bs-toggle="tooltip" title="Statistics">
+                                            <i class="fas fa-chart-bar"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger btn-sm btn-delete" data-bs-toggle="tooltip" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -410,6 +511,170 @@ if ($campaign_id) {
 </div>
 
 <script>
+// Enhanced Creative Management JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCreativeManagement();
+});
+
+function initializeCreativeManagement() {
+    // Initialize all components
+    setupFormValidation();
+    setupTooltips();
+    setupDropdownHandlers();
+    setupPreviewFeatures();
+    
+    // Call existing functions
+    toggleCreativeFields();
+}
+
+function setupFormValidation() {
+    const form = document.getElementById('creativeForm');
+    if (!form) return;
+    
+    // Real-time validation
+    const inputs = form.querySelectorAll('input[required], select[required]');
+    inputs.forEach(input => {
+        input.addEventListener('blur', validateField);
+        input.addEventListener('input', clearFieldError);
+    });
+    
+    // Bid amount validation
+    const bidInput = document.getElementById('bid_amount');
+    if (bidInput) {
+        bidInput.addEventListener('input', function() {
+            const value = parseFloat(this.value);
+            if (value < 0.0001) {
+                showFieldError(this, 'Minimum bid amount is $0.0001');
+            } else if (value > 100) {
+                showFieldWarning(this, 'High bid amount detected');
+            } else {
+                clearFieldError(this);
+            }
+        });
+    }
+}
+
+function validateField(event) {
+    const field = event.target;
+    if (!field.value.trim() && field.hasAttribute('required')) {
+        showFieldError(field, 'This field is required');
+    } else {
+        clearFieldError(field);
+    }
+}
+
+function showFieldError(field, message) {
+    clearFieldError(field);
+    field.classList.add('is-invalid');
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'invalid-feedback';
+    errorDiv.textContent = message;
+    field.parentNode.appendChild(errorDiv);
+}
+
+function showFieldWarning(field, message) {
+    clearFieldError(field);
+    field.classList.add('border-warning');
+    
+    const warningDiv = document.createElement('div');
+    warningDiv.className = 'text-warning small mt-1';
+    warningDiv.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i>${message}`;
+    field.parentNode.appendChild(warningDiv);
+}
+
+function clearFieldError(field) {
+    if (typeof field === 'object') {
+        field = field.target || field;
+    }
+    
+    field.classList.remove('is-invalid', 'border-warning');
+    const feedback = field.parentNode.querySelector('.invalid-feedback, .text-warning');
+    if (feedback) {
+        feedback.remove();
+    }
+}
+
+function setupTooltips() {
+    // Initialize Bootstrap tooltips with custom options
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            delay: { show: 500, hide: 100 },
+            placement: 'top'
+        });
+    });
+}
+
+function setupDropdownHandlers() {
+    const campaignSelect = document.getElementById('campaign_id');
+    if (campaignSelect) {
+        campaignSelect.addEventListener('change', function() {
+            if (this.value) {
+                // Show loading state
+                showLoadingState();
+                
+                // Redirect to load campaign data
+                setTimeout(() => {
+                    window.location.href = 'creative.php?campaign_id=' + this.value;
+                }, 300);
+            }
+        });
+    }
+}
+
+function setupPreviewFeatures() {
+    // Add preview functionality to creative cards
+    const previewButtons = document.querySelectorAll('.btn-outline-success');
+    previewButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // In a real implementation, this would show a modal with creative preview
+            showNotification('Preview feature coming soon!', 'info');
+        });
+    });
+}
+
+function showLoadingState() {
+    const body = document.body;
+    const loader = document.createElement('div');
+    loader.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center';
+    loader.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+    loader.style.zIndex = '9999';
+    loader.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="text-muted">Loading campaign data...</div>
+        </div>
+    `;
+    body.appendChild(loader);
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.style.minWidth = '300px';
+    
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
 function updateHeight() {
     const widthSelect = document.getElementById('width');
     const heightInput = document.getElementById('height');
@@ -417,7 +682,38 @@ function updateHeight() {
     
     if (selectedOption && selectedOption.dataset.height) {
         heightInput.value = selectedOption.dataset.height;
+        
+        // Animate the update
+        heightInput.style.backgroundColor = '#e3f2fd';
+        setTimeout(() => {
+            heightInput.style.backgroundColor = '#f8f9fa';
+        }, 500);
+        
+        // Show size preview
+        showSizePreview(widthSelect.value, selectedOption.dataset.height);
     }
+}
+
+function showSizePreview(width, height) {
+    // Remove existing preview
+    const existingPreview = document.querySelector('.size-preview');
+    if (existingPreview) {
+        existingPreview.remove();
+    }
+    
+    // Create new preview
+    const preview = document.createElement('div');
+    preview.className = 'size-preview mt-2 p-2 border rounded bg-light';
+    preview.innerHTML = `
+        <small class="text-muted">
+            <i class="fas fa-eye me-1"></i>
+            Preview size: <strong>${width}×${height}px</strong>
+        </small>
+        <div class="mt-1" style="width: ${Math.min(width/2, 100)}px; height: ${Math.min(height/2, 50)}px; background: linear-gradient(45deg, #007bff, #17a2b8); border-radius: 2px;"></div>
+    `;
+    
+    const heightInput = document.getElementById('height');
+    heightInput.parentNode.appendChild(preview);
 }
 
 function toggleCreativeFields() {
@@ -430,43 +726,39 @@ function toggleCreativeFields() {
     
     if (!imageFields || !videoFields || !htmlFields) return; // Safety check
     
-    // Hide all fields first
-    imageFields.style.display = 'none';
-    videoFields.style.display = 'none';
-    htmlFields.style.display = 'none';
+    // Hide all fields first with smooth transition
+    [imageFields, videoFields, htmlFields].forEach(field => {
+        field.style.opacity = '0';
+        field.style.display = 'none';
+    });
     
-    // Show relevant fields
+    // Show relevant fields with animation
+    let targetField;
     switch (creativeType.value) {
         case 'image':
-            imageFields.style.display = 'block';
+            targetField = imageFields;
             break;
         case 'video':
-            videoFields.style.display = 'block';
+            targetField = videoFields;
             break;
         case 'html5':
         case 'third_party':
-            htmlFields.style.display = 'block';
+            targetField = htmlFields;
             break;
+    }
+    
+    if (targetField) {
+        targetField.style.display = 'block';
+        setTimeout(() => {
+            targetField.style.opacity = '1';
+        }, 50);
     }
 }
 
-// Prevent form submission when changing campaign
-document.getElementById('campaign_id').addEventListener('change', function() {
-    if (this.value) {
-        window.location.href = 'creative.php?campaign_id=' + this.value;
-    }
-});
-
-// Initialize form
-document.addEventListener('DOMContentLoaded', function() {
-    toggleCreativeFields();
-    
-    // Fix for tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
-    });
-});
+// Enhanced creative type field toggling with validation
+if (document.getElementById('creative_type')) {
+    document.getElementById('creative_type').addEventListener('change', toggleCreativeFields);
+}
 </script>
 
 <?php include 'includes/footer.php'; ?>
