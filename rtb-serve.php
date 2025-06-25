@@ -1,10 +1,10 @@
 <?php
 /**
- * RTB Ad Serving Endpoint
- * Handles bid requests and serves winning ads
- * Version: 1.1.0 - Fixed RTB winning logic
- * Date: 2025-06-23 21:32:15
- * Author: simoncode12
+ * RTB Ad Serving Endpoint - Enhanced Version
+ * Handles bid requests and serves winning ads using unified bidding engine
+ * Version: 2.0.0 - Enhanced with unified bidding logic
+ * Date: 2025-06-25
+ * Author: simoncode12 + AI Assistant
  */
 
 header('Content-Type: application/json');
@@ -13,249 +13,206 @@ header('Access-Control-Allow-Methods: GET, POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
 require_once 'config/database.php';
+require_once 'includes/BiddingEngine.php';
+require_once 'includes/functions.php';
 
-// Get request parameters
-$zone_id = $_GET['zone'] ?? 0;
-$container_id = $_GET['container'] ?? '';
-$size = $_GET['size'] ?? '300x250';
-
-// Log the request
-error_log("AdStart Request - Zone: $zone_id, Container: $container_id, Size: $size");
-
-// Validate zone
-$stmt = $pdo->prepare("SELECT * FROM zones WHERE id = ? AND status = 'active'");
-$stmt->execute([$zone_id]);
-$zone = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$zone) {
-    error_log("Zone not found or inactive: $zone_id");
-    echo json_encode(['error' => 'Invalid zone']);
+// Rate limiting
+$client_ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+if (!RateLimiter::checkLimit($client_ip, 1000, 3600)) {
+    http_response_code(429);
+    echo json_encode(['error' => 'Rate limit exceeded']);
     exit;
 }
 
-// Parse size
-list($width, $height) = explode('x', $size);
+// Start performance monitoring
+PerformanceMonitor::start('rtb_serve');
 
-// Get user info
-$user_ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-$user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-$referer = $_SERVER['HTTP_REFERER'] ?? '';
-
-// Detect device type
-$is_mobile = preg_match('/Mobile|Android|iPhone/i', $user_agent);
-$device_type = $is_mobile ? 'mobile' : 'desktop';
-
-// Detect browser
-$browser = 'other';
-if (strpos($user_agent, 'Chrome') !== false) $browser = 'chrome';
-elseif (strpos($user_agent, 'Firefox') !== false) $browser = 'firefox';
-elseif (strpos($user_agent, 'Safari') !== false) $browser = 'safari';
-elseif (strpos($user_agent, 'Edge') !== false) $browser = 'edge';
-
-// Collect all bids
-$bids = [];
-
-// 1. Get RTB bids from active campaigns
-$rtb_query = "
-    SELECT 
-        c.id as campaign_id,
-        c.name as campaign_name,
-        c.bid_price,
-        c.daily_budget,
-        c.total_budget,
-        cr.id as creative_id,
-        cr.name as creative_name,
-        cr.type as creative_type,
-        cr.content,
-        cr.url as creative_url,
-        cr.click_url,
-        'rtb' as bid_type,
-        (SELECT COALESCE(SUM(win_price), 0) 
-         FROM bid_logs 
-         WHERE campaign_id = c.id 
-         AND DATE(created_at) = CURDATE()) as daily_spent
-    FROM campaigns c
-    JOIN campaign_creatives cc ON c.id = cc.campaign_id
-    JOIN creatives cr ON cc.creative_id = cr.id
-    WHERE c.status = 'active'
-    AND c.type = 'rtb'
-    AND cr.status = 'active'
-    AND cr.width = ?
-    AND cr.height = ?
-    AND (c.device_targeting = 'all' OR c.device_targeting = ?)
-    AND (c.start_date IS NULL OR c.start_date <= NOW())
-    AND (c.end_date IS NULL OR c.end_date >= NOW())
-    HAVING daily_spent < c.daily_budget OR c.daily_budget = 0
-";
-
-$stmt = $pdo->prepare($rtb_query);
-$stmt->execute([$width, $height, $device_type]);
-$rtb_campaigns = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-foreach ($rtb_campaigns as $campaign) {
-    $bids[] = [
-        'campaign_id' => $campaign['campaign_id'],
-        'campaign_name' => $campaign['campaign_name'],
-        'creative_id' => $campaign['creative_id'],
-        'bid_price' => floatval($campaign['bid_price']),
-        'type' => 'rtb',
-        'creative_type' => $campaign['creative_type'],
-        'content' => $campaign['content'],
-        'creative_url' => $campaign['creative_url'],
-        'click_url' => $campaign['click_url']
-    ];
-}
-
-// 2. Get RON bids (only if active)
-$ron_query = "
-    SELECT 
-        c.id as campaign_id,
-        c.name as campaign_name,
-        z.floor_price as bid_price,
-        cr.id as creative_id,
-        cr.name as creative_name,
-        cr.type as creative_type,
-        cr.content,
-        cr.url as creative_url,
-        cr.click_url,
-        'ron' as bid_type
-    FROM campaigns c
-    JOIN campaign_zones cz ON c.id = cz.campaign_id
-    JOIN zones z ON cz.zone_id = z.id
-    JOIN campaign_creatives cc ON c.id = cc.campaign_id
-    JOIN creatives cr ON cc.creative_id = cr.id
-    WHERE c.status = 'active'
-    AND c.type = 'ron'
-    AND z.id = ?
-    AND cr.status = 'active'
-    AND cr.width = ?
-    AND cr.height = ?
-    AND (c.start_date IS NULL OR c.start_date <= NOW())
-    AND (c.end_date IS NULL OR c.end_date >= NOW())
-";
-
-$stmt = $pdo->prepare($ron_query);
-$stmt->execute([$zone_id, $width, $height]);
-$ron_campaigns = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-foreach ($ron_campaigns as $campaign) {
-    $bids[] = [
-        'campaign_id' => $campaign['campaign_id'],
-        'campaign_name' => $campaign['campaign_name'],
-        'creative_id' => $campaign['creative_id'],
-        'bid_price' => floatval($campaign['bid_price']),
-        'type' => 'ron',
-        'creative_type' => $campaign['creative_type'],
-        'content' => $campaign['content'],
-        'creative_url' => $campaign['creative_url'],
-        'click_url' => $campaign['click_url']
-    ];
-}
-
-// Log bid counts
-$rtb_count = count($rtb_campaigns);
-$ron_count = count($ron_campaigns);
-error_log("Total bids: " . count($bids) . " (RTB: $rtb_count, RON: $ron_count)");
-
-// Determine winning bid
-$winning_bid = null;
-
-if (!empty($bids)) {
-    // Sort bids by price (highest first)
-    usort($bids, function($a, $b) {
-        return $b['bid_price'] <=> $a['bid_price'];
-    });
+try {
+    // Get and validate request parameters
+    $zone_id = intval($_GET['zone'] ?? 0);
+    $container_id = sanitizeInput($_GET['container'] ?? '');
+    $size = sanitizeInput($_GET['size'] ?? '300x250');
     
-    // Get zone floor price
-    $floor_price = floatval($zone['floor_price']);
+    if ($zone_id <= 0) {
+        throw new Exception('Invalid zone ID');
+    }
     
-    // Find the highest bid that meets floor price
-    foreach ($bids as $bid) {
-        if ($bid['bid_price'] >= $floor_price) {
-            $winning_bid = $bid;
-            break;
+    // Parse size
+    if (!preg_match('/^(\d+)x(\d+)$/', $size, $matches)) {
+        throw new Exception('Invalid size format');
+    }
+    
+    $width = intval($matches[1]);
+    $height = intval($matches[2]);
+    
+    // Log the request
+    error_log("Enhanced RTB Request - Zone: $zone_id, Container: $container_id, Size: {$width}x{$height}");
+    
+    // Initialize enhanced bidding engine
+    $bidding_engine = new BiddingEngine($pdo, true);
+    
+    // Prepare request data
+    $request_data = [
+        'zone_id' => $zone_id,
+        'width' => $width,
+        'height' => $height,
+        'container' => $container_id,
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+        'referer' => $_SERVER['HTTP_REFERER'] ?? ''
+    ];
+    
+    // Process bid request using enhanced engine
+    $winning_bid = $bidding_engine->processBidRequest($request_data);
+    
+    if ($winning_bid) {
+        // Prepare enhanced ad response
+        $ad_response = [
+            'success' => true,
+            'ad' => prepareEnhancedAdResponse($winning_bid, $zone_id, $container_id),
+            'campaign_type' => $winning_bid['campaign_type'],
+            'win_price' => $winning_bid['winning_price'],
+            'campaign_id' => $winning_bid['campaign_id'],
+            'meta' => [
+                'request_id' => uniqid('req_'),
+                'timestamp' => time(),
+                'processing_time_ms' => PerformanceMonitor::end('rtb_serve')
+            ]
+        ];
+        
+        // Cache successful response briefly
+        SimpleCache::set("ad_response_{$zone_id}_{$width}x{$height}", $ad_response, 60);
+        
+        echo json_encode($ad_response);
+        
+    } else {
+        // No winning bid found
+        error_log("No valid bids found for zone $zone_id, size {$width}x{$height}");
+        
+        // Try cached fallback
+        $fallback = SimpleCache::get("fallback_ad_{$zone_id}");
+        if ($fallback) {
+            echo json_encode([
+                'success' => true,
+                'ad' => $fallback,
+                'campaign_type' => 'fallback',
+                'meta' => ['source' => 'cache_fallback']
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'error' => 'No ads available',
+                'meta' => [
+                    'request_id' => uniqid('req_'),
+                    'timestamp' => time()
+                ]
+            ]);
         }
     }
     
-    // If no bid meets floor price but we have RTB bids, use the highest RTB bid
-    if (!$winning_bid && $rtb_count > 0) {
-        foreach ($bids as $bid) {
-            if ($bid['type'] == 'rtb') {
-                $winning_bid = $bid;
-                error_log("RTB bid won by default (no floor price met): " . $bid['campaign_name'] . " at $" . $bid['bid_price']);
-                break;
-            }
-        }
-    }
-}
-
-if ($winning_bid) {
-    // Log the winning bid
-    error_log($winning_bid['type'] . " bid won: " . $winning_bid['campaign_name'] . " at price: " . $winning_bid['bid_price']);
-    
-    // Record bid in database
-    $stmt = $pdo->prepare("
-        INSERT INTO bid_logs (
-            zone_id, campaign_id, creative_id, bid_price, win_price, 
-            status, ip_address, user_agent, referer, device_type, 
-            browser, country, created_at
-        ) VALUES (
-            ?, ?, ?, ?, ?, 'win', ?, ?, ?, ?, ?, 'US', NOW()
-        )
-    ");
-    
-    $stmt->execute([
-        $zone_id,
-        $winning_bid['campaign_id'],
-        $winning_bid['creative_id'],
-        $winning_bid['bid_price'],
-        $winning_bid['bid_price'],
-        $user_ip,
-        $user_agent,
-        $referer,
-        $device_type,
-        $browser
+} catch (Exception $e) {
+    // Enhanced error handling
+    logError('RTB Serve Error: ' . $e->getMessage(), [
+        'zone_id' => $zone_id ?? null,
+        'size' => $size ?? null,
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? null
     ]);
     
-    $impression_id = $pdo->lastInsertId();
-    
-    // Generate click tracking URL
-    $click_url = "https://{$_SERVER['HTTP_HOST']}/click.php?id=" . $impression_id;
-    
-    // Prepare ad response
-    $response = [
-        'success' => true,
-        'ad' => [
-            'creative_type' => $winning_bid['creative_type'],
-            'width' => $width,
-            'height' => $height,
-            'click_url' => $click_url,
-            'impression_id' => $impression_id
-        ]
-    ];
-    
-    // Add creative content based on type
-    if ($winning_bid['creative_type'] == 'image') {
-        $response['ad']['image_url'] = $winning_bid['creative_url'];
-        $response['ad']['html'] = '<a href="' . $click_url . '" target="_blank"><img src="' . $winning_bid['creative_url'] . '" width="' . $width . '" height="' . $height . '" border="0" /></a>';
-    } elseif ($winning_bid['creative_type'] == 'html5') {
-        $html_content = str_replace('{CLICK_URL}', $click_url, $winning_bid['content']);
-        $response['ad']['html'] = $html_content;
-    }
-    
-    echo json_encode($response);
-    
-} else {
-    // No winning bid
-    error_log("No ad served: No matching ads found for size $size");
-    
-    // Return blank ad or default
+    http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'No ads available',
-        'ad' => [
-            'html' => '<!-- No ad available -->'
+        'error' => 'Internal server error',
+        'meta' => [
+            'request_id' => uniqid('req_'),
+            'timestamp' => time()
         ]
     ]);
+/**
+ * Prepare enhanced ad response with tracking and optimization
+ */
+function prepareEnhancedAdResponse($winning_bid, $zone_id, $container_id) {
+    $creative_data = $winning_bid['creative_data'];
+    $campaign_id = $winning_bid['campaign_id'];
+    $creative_id = $winning_bid['creative_id'];
+    
+    // Enhanced click tracking URL with campaign info
+    $click_url = "https://" . $_SERVER['HTTP_HOST'] . "/api/click-track.php?" . http_build_query([
+        'zone' => $zone_id,
+        'campaign' => $campaign_id,
+        'creative' => $creative_id,
+        'container' => $container_id,
+        'type' => $winning_bid['campaign_type'],
+        'price' => $winning_bid['winning_price'],
+        'ts' => time()
+    ]);
+    
+    // Impression tracking pixel
+    $impression_url = "https://" . $_SERVER['HTTP_HOST'] . "/api/impression-track.php?" . http_build_query([
+        'zone' => $zone_id,
+        'campaign' => $campaign_id,
+        'creative' => $creative_id,
+        'type' => $winning_bid['campaign_type'],
+        'ts' => time()
+    ]);
+    
+    switch ($creative_data['type']) {
+        case 'image':
+            return [
+                'type' => 'image',
+                'url' => $creative_data['image_url'],
+                'click_url' => $click_url,
+                'impression_url' => $impression_url,
+                'width' => $creative_data['width'],
+                'height' => $creative_data['height'],
+                'alt' => 'Advertisement by ' . $winning_bid['advertiser_name']
+            ];
+            
+        case 'video':
+            return [
+                'type' => 'video',
+                'video_url' => $creative_data['video_url'],
+                'click_url' => $click_url,
+                'impression_url' => $impression_url,
+                'width' => $creative_data['width'],
+                'height' => $creative_data['height'],
+                'autoplay' => false,
+                'controls' => true
+            ];
+            
+        case 'html5':
+        case 'third_party':
+            // Enhanced HTML with automatic tracking injection
+            $html_content = $creative_data['html_content'];
+            
+            // Inject impression tracking
+            $tracking_pixel = '<img src="' . htmlspecialchars($impression_url) . '" width="1" height="1" style="display:none;" />';
+            
+            // Add click tracking to links if not already present
+            if (strpos($html_content, 'href=') !== false && strpos($html_content, $click_url) === false) {
+                $html_content = preg_replace(
+                    '/href=["\']([^"\']+)["\']/i',
+                    'href="' . $click_url . '" data-original-url="$1"',
+                    $html_content
+                );
+            }
+            
+            return [
+                'type' => 'html',
+                'html' => $html_content . $tracking_pixel,
+                'click_url' => $click_url,
+                'width' => $creative_data['width'],
+                'height' => $creative_data['height']
+            ];
+            
+        default:
+            return [
+                'type' => 'text',
+                'text' => 'Advertisement',
+                'click_url' => $click_url,
+                'impression_url' => $impression_url,
+                'width' => $creative_data['width'],
+                'height' => $creative_data['height']
+            ];
+    }
 }
 ?>

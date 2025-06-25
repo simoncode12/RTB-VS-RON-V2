@@ -196,208 +196,311 @@ $campaigns = $pdo->query("
 
 <div class="row">
     <div class="col-12">
-        <h1 class="h3 mb-4">
-            <i class="fas fa-network-wired"></i> RON Campaigns
-            <small class="text-muted">Manage Run-of-Network campaigns</small>
-        </h1>
-        <div class="text-muted mb-3">
-            <small>
-                <i class="fas fa-clock"></i> Current Time (UTC): <?php echo $current_timestamp; ?> | 
-                <i class="fas fa-user"></i> Logged in as: <?php echo htmlspecialchars($current_user); ?>
-            </small>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 mb-2 text-gradient">
+                    <i class="fas fa-network-wired me-2"></i>RON Campaign Manager
+                </h1>
+                <p class="text-muted mb-0">Create and manage Run-of-Network advertising campaigns</p>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="text-muted small">
+                    <i class="fas fa-clock me-1"></i><?php echo $current_timestamp; ?>
+                </div>
+                <div class="text-muted small">
+                    <i class="fas fa-user me-1"></i><?php echo htmlspecialchars($current_user); ?>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <?php if ($message): ?>
-    <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show">
-        <?php echo htmlspecialchars($message); ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show d-flex align-items-center">
+        <i class="fas fa-<?php echo $message_type === 'success' ? 'check-circle' : ($message_type === 'danger' ? 'exclamation-triangle' : 'info-circle'); ?> me-3 fs-4"></i>
+        <div class="flex-grow-1">
+            <?php echo htmlspecialchars($message); ?>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 <?php endif; ?>
 
 <!-- Create Campaign Form -->
-<div class="card mb-4">
+<div class="card creative-card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="fas fa-plus"></i> Create RON Campaign</h5>
-        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#createCampaignForm">
-            <i class="fas fa-plus"></i> New Campaign
+        <div class="d-flex align-items-center">
+            <div class="me-3">
+                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="fas fa-plus text-white"></i>
+                </div>
+            </div>
+            <div>
+                <h5 class="mb-0">Create RON Campaign</h5>
+                <small class="text-muted">Set up a new Run-of-Network advertising campaign</small>
+            </div>
+        </div>
+        <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#createCampaignForm">
+            <i class="fas fa-plus me-2"></i>New Campaign
         </button>
     </div>
     <div class="collapse" id="createCampaignForm">
-        <div class="card-body">
-            <form method="POST">
+        <div class="card-body p-4">
+            <form method="POST" id="campaignForm">
                 <input type="hidden" name="action" value="create_campaign">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="name" class="form-label">Campaign Name *</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
+                <!-- Campaign Basic Information -->
+                <div class="border-start border-4 border-primary p-3 mb-4 bg-light bg-opacity-50 rounded">
+                    <h6 class="mb-3 text-primary">
+                        <i class="fas fa-info-circle me-2"></i>Campaign Information
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">
+                                <i class="fas fa-tag me-2"></i>Campaign Name *
+                            </label>
+                            <input type="text" class="form-control" id="name" name="name" required 
+                                   placeholder="e.g., Summer Sale RON Campaign">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="advertiser_id" class="form-label">
+                                <i class="fas fa-building me-2"></i>Advertiser *
+                            </label>
+                            <select class="form-select" id="advertiser_id" name="advertiser_id" required>
+                                <option value="">Choose advertiser...</option>
+                                <?php foreach ($advertisers as $advertiser): ?>
+                                    <option value="<?php echo $advertiser['id']; ?>">
+                                        <?php echo htmlspecialchars($advertiser['name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="advertiser_id" class="form-label">Advertiser *</label>
-                        <select class="form-select" id="advertiser_id" name="advertiser_id" required>
-                            <option value="">Select Advertiser</option>
-                            <?php foreach ($advertisers as $advertiser): ?>
-                                <option value="<?php echo $advertiser['id']; ?>">
-                                    <?php echo htmlspecialchars($advertiser['name']); ?>
-                                </option>
+                </div>
+                
+                <!-- Campaign Settings -->
+                <div class="border-start border-4 border-info p-3 mb-4 bg-light bg-opacity-50 rounded">
+                    <h6 class="mb-3 text-info">
+                        <i class="fas fa-cogs me-2"></i>Campaign Settings
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="category_id" class="form-label">
+                                <i class="fas fa-folder me-2"></i>Category
+                            </label>
+                            <select class="form-select" id="category_id" name="category_id">
+                                <option value="">Choose category...</option>
+                                <?php foreach ($categories as $category): ?>
+                                    <option value="<?php echo $category['id']; ?>">
+                                        <?php echo htmlspecialchars($category['name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="bid_type" class="form-label">
+                                <i class="fas fa-dollar-sign me-2"></i>Pricing Model
+                            </label>
+                            <select class="form-select" id="bid_type" name="bid_type">
+                                <option value="cpm">CPM - Cost Per 1,000 Impressions</option>
+                                <option value="cpc">CPC - Cost Per Click</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="fas fa-rocket me-2"></i>Campaign Options
+                            </label>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" id="priority_delivery" name="priority_delivery">
+                                <label class="form-check-label" for="priority_delivery">
+                                    <strong>Priority Delivery</strong>
+                                </label>
+                                <div class="form-text">
+                                    <small>Higher priority in ad serving queue</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Budget & Schedule -->
+                <div class="border-start border-4 border-success p-3 mb-4 bg-light bg-opacity-50 rounded">
+                    <h6 class="mb-3 text-success">
+                        <i class="fas fa-wallet me-2"></i>Budget & Schedule
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="daily_budget" class="form-label">
+                                <i class="fas fa-calendar-day me-2"></i>Daily Budget
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="daily_budget" name="daily_budget"
+                                       step="0.01" min="0" placeholder="100.00">
+                            </div>
+                            <div class="form-text">
+                                <small>Maximum spend per day</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="total_budget" class="form-label">
+                                <i class="fas fa-piggy-bank me-2"></i>Total Budget
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="total_budget" name="total_budget"
+                                       step="0.01" min="0" placeholder="1000.00">
+                            </div>
+                            <div class="form-text">
+                                <small>Campaign lifetime budget</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="start_date" class="form-label">
+                                <i class="fas fa-play me-2"></i>Start Date
+                            </label>
+                            <input type="date" class="form-control" id="start_date" name="start_date">
+                            <div class="form-text">
+                                <small>Campaign start date</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="end_date" class="form-label">
+                                <i class="fas fa-stop me-2"></i>End Date
+                            </label>
+                            <input type="date" class="form-control" id="end_date" name="end_date">
+                            <div class="form-text">
+                                <small>Campaign end date</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Advanced Targeting -->
+                <div class="border-start border-4 border-warning p-3 mb-4 bg-light bg-opacity-50 rounded">
+                    <h6 class="mb-3 text-warning">
+                        <i class="fas fa-crosshairs me-2"></i>Audience Targeting
+                    </h6>
+                    
+                    <!-- Countries Targeting -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <label class="form-label mb-0">
+                                <i class="fas fa-globe-americas me-2"></i><strong>Geographic Targeting</strong>
+                            </label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="select_all_countries" name="select_all_countries" checked>
+                                <label class="form-check-label" for="select_all_countries">
+                                    <span class="badge bg-success">All Countries</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div id="countries_container" class="targeting-grid" style="display: none;">
+                            <?php foreach ($countries as $code => $name): ?>
+                            <div class="targeting-item">
+                                <div class="form-check">
+                                    <input class="form-check-input country-checkbox" type="checkbox" name="target_countries[]" 
+                                           id="country_<?php echo $code; ?>" value="<?php echo $code; ?>">
+                                    <label class="form-check-label" for="country_<?php echo $code; ?>">
+                                        <span class="flag-icon flag-icon-<?php echo strtolower($code); ?> me-2"></span>
+                                        <?php echo htmlspecialchars($name); ?>
+                                        <small class="text-muted">(<?php echo $code; ?>)</small>
+                                    </label>
+                                </div>
+                            </div>
                             <?php endforeach; ?>
-                        </select>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label for="category_id" class="form-label">Category</label>
-                        <select class="form-select" id="category_id" name="category_id">
-                            <option value="">Select Category</option>
-                            <?php foreach ($categories as $category): ?>
-                                <option value="<?php echo $category['id']; ?>">
-                                    <?php echo htmlspecialchars($category['name']); ?>
-                                </option>
+                    
+                    <!-- Browser Targeting -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <label class="form-label mb-0">
+                                <i class="fas fa-browser me-2"></i><strong>Browser Targeting</strong>
+                            </label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="select_all_browsers" name="select_all_browsers" checked>
+                                <label class="form-check-label" for="select_all_browsers">
+                                    <span class="badge bg-success">All Browsers</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div id="browsers_container" class="targeting-grid" style="display: none;">
+                            <?php foreach ($browsers as $code => $name): ?>
+                            <div class="targeting-item">
+                                <div class="form-check">
+                                    <input class="form-check-input browser-checkbox" type="checkbox" name="target_browsers[]" 
+                                           id="browser_<?php echo $code; ?>" value="<?php echo $code; ?>">
+                                    <label class="form-check-label" for="browser_<?php echo $code; ?>">
+                                        <i class="fab fa-<?php echo strtolower($code) === 'chrome' ? 'chrome' : (strtolower($code) === 'firefox' ? 'firefox-browser' : (strtolower($code) === 'safari' ? 'safari' : (strtolower($code) === 'edge' ? 'edge' : 'internet-explorer'))); ?> me-2"></i>
+                                        <?php echo htmlspecialchars($name); ?>
+                                    </label>
+                                </div>
+                            </div>
                             <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="bid_type" class="form-label">Bid Type</label>
-                        <select class="form-select" id="bid_type" name="bid_type">
-                            <option value="cpm">CPM - Cost Per Mile</option>
-                            <option value="cpc">CPC - Cost Per Click</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="form-check form-switch mt-4">
-                            <input class="form-check-input" type="checkbox" id="priority_delivery" name="priority_delivery">
-                            <label class="form-check-label" for="priority_delivery">Priority Delivery</label>
-                            <small class="form-text text-muted d-block">Enable for preferred delivery across the network</small>
                         </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <label for="daily_budget" class="form-label">Daily Budget</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" class="form-control" id="daily_budget" name="daily_budget"
-                                   step="0.01" min="0">
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="total_budget" class="form-label">Total Budget</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" class="form-control" id="total_budget" name="total_budget"
-                                   step="0.01" min="0">
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="start_date" class="form-label">Start Date</label>
-                        <input type="date" class="form-control" id="start_date" name="start_date">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="end_date" class="form-label">End Date</label>
-                        <input type="date" class="form-control" id="end_date" name="end_date">
-                    </div>
-                </div>
-                
-                <h6 class="mt-4 mb-3">Targeting Options</h6>
-                
-                <!-- Countries Selection -->
-                <div class="mb-4">
-                    <label class="form-label">Target Countries</label>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" id="select_all_countries" name="select_all_countries" checked>
-                        <label class="form-check-label" for="select_all_countries">
-                            <strong>All Countries</strong> (no targeting restrictions)
-                        </label>
                     </div>
                     
-                    <div id="countries_container" class="row g-2 mt-2" style="display: none;">
-                        <?php foreach ($countries as $code => $name): ?>
-                        <div class="col-md-3">
-                            <div class="form-check">
-                                <input class="form-check-input country-checkbox" type="checkbox" name="target_countries[]" 
-                                       id="country_<?php echo $code; ?>" value="<?php echo $code; ?>">
-                                <label class="form-check-label" for="country_<?php echo $code; ?>">
-                                    <?php echo htmlspecialchars($name); ?> (<?php echo $code; ?>)
+                    <!-- Device Targeting -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <label class="form-label mb-0">
+                                <i class="fas fa-devices me-2"></i><strong>Device Targeting</strong>
+                            </label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="select_all_devices" name="select_all_devices" checked>
+                                <label class="form-check-label" for="select_all_devices">
+                                    <span class="badge bg-success">All Devices</span>
                                 </label>
                             </div>
                         </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-                
-                <!-- Browsers Selection -->
-                <div class="mb-4">
-                    <label class="form-label">Target Browsers</label>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" id="select_all_browsers" name="select_all_browsers" checked>
-                        <label class="form-check-label" for="select_all_browsers">
-                            <strong>All Browsers</strong> (no targeting restrictions)
-                        </label>
+                        
+                        <div id="devices_container" class="targeting-grid" style="display: none;">
+                            <?php foreach ($devices as $code => $name): ?>
+                            <div class="targeting-item">
+                                <div class="form-check">
+                                    <input class="form-check-input device-checkbox" type="checkbox" name="target_devices[]" 
+                                           id="device_<?php echo $code; ?>" value="<?php echo $code; ?>">
+                                    <label class="form-check-label" for="device_<?php echo $code; ?>">
+                                        <i class="fas fa-<?php echo $code === 'desktop' ? 'desktop' : ($code === 'mobile' ? 'mobile-alt' : ($code === 'tablet' ? 'tablet-alt' : 'tv')); ?> me-2"></i>
+                                        <?php echo htmlspecialchars($name); ?>
+                                    </label>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                     
-                    <div id="browsers_container" class="row g-2 mt-2" style="display: none;">
-                        <?php foreach ($browsers as $code => $name): ?>
-                        <div class="col-md-3">
-                            <div class="form-check">
-                                <input class="form-check-input browser-checkbox" type="checkbox" name="target_browsers[]" 
-                                       id="browser_<?php echo $code; ?>" value="<?php echo $code; ?>">
-                                <label class="form-check-label" for="browser_<?php echo $code; ?>">
-                                    <?php echo htmlspecialchars($name); ?>
+                    <!-- OS Targeting -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <label class="form-label mb-0">
+                                <i class="fas fa-code me-2"></i><strong>Operating System Targeting</strong>
+                            </label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="select_all_os" name="select_all_os" checked>
+                                <label class="form-check-label" for="select_all_os">
+                                    <span class="badge bg-success">All Operating Systems</span>
                                 </label>
                             </div>
                         </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-                
-                <!-- Devices Selection -->
-                <div class="mb-4">
-                    <label class="form-label">Target Devices</label>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" id="select_all_devices" name="select_all_devices" checked>
-                        <label class="form-check-label" for="select_all_devices">
-                            <strong>All Devices</strong> (no targeting restrictions)
-                        </label>
-                    </div>
-                    
-                    <div id="devices_container" class="row g-2 mt-2" style="display: none;">
-                        <?php foreach ($devices as $code => $name): ?>
-                        <div class="col-md-3">
-                            <div class="form-check">
-                                <input class="form-check-input device-checkbox" type="checkbox" name="target_devices[]" 
-                                       id="device_<?php echo $code; ?>" value="<?php echo $code; ?>">
-                                <label class="form-check-label" for="device_<?php echo $code; ?>">
-                                    <?php echo htmlspecialchars($name); ?>
-                                </label>
+                        
+                        <div id="os_container" class="targeting-grid" style="display: none;">
+                            <?php foreach ($operating_systems as $code => $name): ?>
+                            <div class="targeting-item">
+                                <div class="form-check">
+                                    <input class="form-check-input os-checkbox" type="checkbox" name="target_os[]" 
+                                           id="os_<?php echo $code; ?>" value="<?php echo $code; ?>">
+                                    <label class="form-check-label" for="os_<?php echo $code; ?>">
+                                        <i class="fab fa-<?php echo strtolower($code) === 'windows' ? 'windows' : (strtolower($code) === 'macos' ? 'apple' : (strtolower($code) === 'android' ? 'android' : (strtolower($code) === 'ios' ? 'apple' : 'linux'))); ?> me-2"></i>
+                                        <?php echo htmlspecialchars($name); ?>
+                                    </label>
+                                </div>
                             </div>
+                            <?php endforeach; ?>
                         </div>
-                        <?php endforeach; ?>
                     </div>
                 </div>
-                
-                <!-- OS Selection -->
-                <div class="mb-4">
-                    <label class="form-label">Target Operating Systems</label>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" id="select_all_os" name="select_all_os" checked>
-                        <label class="form-check-label" for="select_all_os">
-                            <strong>All Operating Systems</strong> (no targeting restrictions)
-                        </label>
-                    </div>
-                    
-                    <div id="os_container" class="row g-2 mt-2" style="display: none;">
-                        <?php foreach ($operating_systems as $code => $name): ?>
-                        <div class="col-md-3">
-                            <div class="form-check">
-                                <input class="form-check-input os-checkbox" type="checkbox" name="target_os[]" 
-                                       id="os_<?php echo $code; ?>" value="<?php echo $code; ?>">
-                                <label class="form-check-label" for="os_<?php echo $code; ?>">
-                                    <?php echo htmlspecialchars($name); ?>
-                                </label>
-                            </div>
                         </div>
                         <?php endforeach; ?>
                     </div>
@@ -575,99 +678,327 @@ $campaigns = $pdo->query("
 </div>
 
 <script>
+// Enhanced Campaign Management JavaScript
 document.addEventListener('DOMContentLoaded', function() {
+    initializeCampaignManagement();
+});
+
+function initializeCampaignManagement() {
+    setupFormDefaults();
+    setupTargetingToggles();
+    setupFormValidation();
+    setupTooltips();
+    setupBudgetCalculator();
+    setupAnimations();
+}
+
+function setupFormDefaults() {
     // Set default start date (today)
     const today = new Date();
-    document.getElementById('start_date').valueAsDate = today;
+    const startDateInput = document.getElementById('start_date');
+    if (startDateInput) {
+        startDateInput.valueAsDate = today;
+    }
     
     // Set default end date (30 days from now)
     const thirtyDaysLater = new Date();
     thirtyDaysLater.setDate(today.getDate() + 30);
-    document.getElementById('end_date').valueAsDate = thirtyDaysLater;
+    const endDateInput = document.getElementById('end_date');
+    if (endDateInput) {
+        endDateInput.valueAsDate = thirtyDaysLater;
+    }
     
-    // Handle "All Countries" checkbox
-    document.getElementById('select_all_countries').addEventListener('change', function() {
-        const countriesContainer = document.getElementById('countries_container');
-        const countryCheckboxes = document.querySelectorAll('.country-checkbox');
-        
-        if (this.checked) {
-            countriesContainer.style.display = 'none';
-            countryCheckboxes.forEach(cb => cb.checked = false);
-        } else {
-            countriesContainer.style.display = 'flex';
-            // Select at least the first few important countries
-            ['US', 'UK', 'CA', 'AU'].forEach(code => {
-                const cb = document.getElementById('country_' + code);
-                if (cb) cb.checked = true;
-            });
-        }
-    });
-    
-    // Handle "All Browsers" checkbox
-    document.getElementById('select_all_browsers').addEventListener('change', function() {
-        const browsersContainer = document.getElementById('browsers_container');
-        const browserCheckboxes = document.querySelectorAll('.browser-checkbox');
-        
-        if (this.checked) {
-            browsersContainer.style.display = 'none';
-            browserCheckboxes.forEach(cb => cb.checked = false);
-        } else {
-            browsersContainer.style.display = 'flex';
-            // Select major browsers by default
-            ['Chrome', 'Firefox', 'Safari', 'Edge'].forEach(code => {
-                const cb = document.getElementById('browser_' + code);
-                if (cb) cb.checked = true;
-            });
-        }
-    });
-    
-    // Handle "All Devices" checkbox
-    document.getElementById('select_all_devices').addEventListener('change', function() {
-        const devicesContainer = document.getElementById('devices_container');
-        const deviceCheckboxes = document.querySelectorAll('.device-checkbox');
-        
-        if (this.checked) {
-            devicesContainer.style.display = 'none';
-            deviceCheckboxes.forEach(cb => cb.checked = false);
-        } else {
-            devicesContainer.style.display = 'flex';
-            // Select desktop and mobile by default
-            ['desktop', 'mobile', 'tablet'].forEach(code => {
-                const cb = document.getElementById('device_' + code);
-                if (cb) cb.checked = true;
-            });
-        }
-    });
-    
-    // Handle "All OS" checkbox
-    document.getElementById('select_all_os').addEventListener('change', function() {
-        const osContainer = document.getElementById('os_container');
-        const osCheckboxes = document.querySelectorAll('.os-checkbox');
-        
-        if (this.checked) {
-            osContainer.style.display = 'none';
-            osCheckboxes.forEach(cb => cb.checked = false);
-        } else {
-            osContainer.style.display = 'flex';
-            // Select major OS by default
-            ['Windows', 'MacOS', 'iOS', 'Android'].forEach(code => {
-                const cb = document.getElementById('os_' + code);
-                if (cb) cb.checked = true;
-            });
-        }
-    });
-    
-    // Handle "Select All Sizes" checkbox
-    document.getElementById('select_all_sizes').addEventListener('change', function() {
+    // Default select all banner sizes if checkbox exists
+    const selectAllSizes = document.getElementById('select_all_sizes');
+    if (selectAllSizes) {
+        selectAllSizes.checked = true;
         const sizeCheckboxes = document.querySelectorAll('.banner-size');
-        sizeCheckboxes.forEach(cb => cb.checked = this.checked);
-    });
+        sizeCheckboxes.forEach(cb => cb.checked = true);
+    }
+}
 
-    // Default select all banner sizes
-    document.getElementById('select_all_sizes').checked = true;
-    const sizeCheckboxes = document.querySelectorAll('.banner-size');
-    sizeCheckboxes.forEach(cb => cb.checked = true);
-});
+function setupTargetingToggles() {
+    // Enhanced targeting toggles with smooth animations
+    setupTargetingToggle('countries', ['US', 'UK', 'CA', 'AU'], 'All Countries');
+    setupTargetingToggle('browsers', ['Chrome', 'Firefox', 'Safari', 'Edge'], 'All Browsers');
+    setupTargetingToggle('devices', ['desktop', 'mobile', 'tablet'], 'All Devices');
+    setupTargetingToggle('os', ['Windows', 'MacOS', 'iOS', 'Android'], 'All Operating Systems');
+    
+    // Banner sizes toggle if it exists
+    const selectAllSizes = document.getElementById('select_all_sizes');
+    if (selectAllSizes) {
+        selectAllSizes.addEventListener('change', function() {
+            const sizeCheckboxes = document.querySelectorAll('.banner-size');
+            sizeCheckboxes.forEach(cb => cb.checked = this.checked);
+            
+            // Visual feedback
+            showNotification(
+                this.checked ? 'All banner sizes selected' : 'Banner size selection cleared',
+                'info'
+            );
+        });
+    }
+}
+
+function setupTargetingToggle(type, defaultOptions, label) {
+    const toggleElement = document.getElementById(`select_all_${type}`);
+    const containerElement = document.getElementById(`${type}_container`);
+    const checkboxes = document.querySelectorAll(`.${type.slice(0, -1)}-checkbox`);
+    
+    if (!toggleElement || !containerElement) return;
+    
+    // Update badge text based on state
+    const updateBadge = (isAllSelected) => {
+        const badgeLabel = toggleElement.nextElementSibling.querySelector('.badge');
+        if (badgeLabel) {
+            badgeLabel.textContent = isAllSelected ? label : `Custom ${label}`;
+            badgeLabel.className = `badge bg-${isAllSelected ? 'success' : 'warning'}`;
+        }
+    };
+    
+    toggleElement.addEventListener('change', function() {
+        if (this.checked) {
+            // Hide container with smooth animation
+            containerElement.style.opacity = '0';
+            setTimeout(() => {
+                containerElement.style.display = 'none';
+                checkboxes.forEach(cb => cb.checked = false);
+            }, 200);
+        } else {
+            // Show container with smooth animation
+            containerElement.style.display = 'grid';
+            containerElement.classList.add('slide-in');
+            setTimeout(() => {
+                containerElement.style.opacity = '1';
+                // Select default options
+                defaultOptions.forEach(code => {
+                    const checkbox = document.getElementById(`${type.slice(0, -1)}_${code}`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }, 50);
+        }
+        
+        updateBadge(this.checked);
+        
+        // Show notification
+        showNotification(
+            this.checked ? `Targeting all ${type}` : `Custom ${type} targeting enabled`,
+            'info'
+        );
+    });
+    
+    // Initialize badge
+    updateBadge(toggleElement.checked);
+}
+
+function setupFormValidation() {
+    const form = document.getElementById('campaignForm');
+    if (!form) return;
+    
+    // Real-time validation for required fields
+    const requiredInputs = form.querySelectorAll('input[required], select[required]');
+    requiredInputs.forEach(input => {
+        input.addEventListener('blur', validateField);
+        input.addEventListener('input', clearFieldError);
+    });
+    
+    // Budget validation
+    const dailyBudget = document.getElementById('daily_budget');
+    const totalBudget = document.getElementById('total_budget');
+    
+    if (dailyBudget && totalBudget) {
+        dailyBudget.addEventListener('input', validateBudgets);
+        totalBudget.addEventListener('input', validateBudgets);
+    }
+    
+    // Date validation
+    const startDate = document.getElementById('start_date');
+    const endDate = document.getElementById('end_date');
+    
+    if (startDate && endDate) {
+        startDate.addEventListener('change', validateDates);
+        endDate.addEventListener('change', validateDates);
+    }
+}
+
+function validateField(event) {
+    const field = event.target;
+    if (!field.value.trim() && field.hasAttribute('required')) {
+        showFieldError(field, 'This field is required');
+        return false;
+    } else {
+        clearFieldError(field);
+        return true;
+    }
+}
+
+function validateBudgets() {
+    const dailyBudget = parseFloat(document.getElementById('daily_budget').value) || 0;
+    const totalBudget = parseFloat(document.getElementById('total_budget').value) || 0;
+    
+    if (dailyBudget > 0 && totalBudget > 0 && dailyBudget > totalBudget) {
+        showFieldError(document.getElementById('daily_budget'), 'Daily budget cannot exceed total budget');
+        return false;
+    }
+    
+    if (dailyBudget > 1000) {
+        showFieldWarning(document.getElementById('daily_budget'), 'High daily budget detected');
+    }
+    
+    return true;
+}
+
+function validateDates() {
+    const startDate = new Date(document.getElementById('start_date').value);
+    const endDate = new Date(document.getElementById('end_date').value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (startDate < today) {
+        showFieldWarning(document.getElementById('start_date'), 'Start date is in the past');
+    }
+    
+    if (endDate <= startDate) {
+        showFieldError(document.getElementById('end_date'), 'End date must be after start date');
+        return false;
+    }
+    
+    return true;
+}
+
+function showFieldError(field, message) {
+    clearFieldError(field);
+    field.classList.add('is-invalid');
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'invalid-feedback';
+    errorDiv.textContent = message;
+    field.parentNode.appendChild(errorDiv);
+}
+
+function showFieldWarning(field, message) {
+    clearFieldError(field);
+    field.classList.add('border-warning');
+    
+    const warningDiv = document.createElement('div');
+    warningDiv.className = 'text-warning small mt-1';
+    warningDiv.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i>${message}`;
+    field.parentNode.appendChild(warningDiv);
+}
+
+function clearFieldError(field) {
+    if (typeof field === 'object') {
+        field = field.target || field;
+    }
+    
+    field.classList.remove('is-invalid', 'border-warning');
+    const feedback = field.parentNode.querySelector('.invalid-feedback, .text-warning');
+    if (feedback) {
+        feedback.remove();
+    }
+}
+
+function setupBudgetCalculator() {
+    const dailyBudget = document.getElementById('daily_budget');
+    const totalBudget = document.getElementById('total_budget');
+    const startDate = document.getElementById('start_date');
+    const endDate = document.getElementById('end_date');
+    
+    if (!dailyBudget || !totalBudget || !startDate || !endDate) return;
+    
+    // Auto-calculate total budget based on daily budget and date range
+    [dailyBudget, startDate, endDate].forEach(element => {
+        element.addEventListener('change', function() {
+            calculateBudgetSuggestion();
+        });
+    });
+}
+
+function calculateBudgetSuggestion() {
+    const dailyBudget = parseFloat(document.getElementById('daily_budget').value) || 0;
+    const startDate = new Date(document.getElementById('start_date').value);
+    const endDate = new Date(document.getElementById('end_date').value);
+    
+    if (dailyBudget > 0 && startDate && endDate && endDate > startDate) {
+        const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+        const suggestedTotal = dailyBudget * daysDiff;
+        
+        const totalBudgetField = document.getElementById('total_budget');
+        if (!totalBudgetField.value || parseFloat(totalBudgetField.value) === 0) {
+            totalBudgetField.value = suggestedTotal.toFixed(2);
+            
+            // Visual feedback
+            totalBudgetField.style.backgroundColor = '#e3f2fd';
+            setTimeout(() => {
+                totalBudgetField.style.backgroundColor = '';
+            }, 1000);
+            
+            showNotification(`Suggested total budget: $${suggestedTotal.toFixed(2)} for ${daysDiff} days`, 'info');
+        }
+    }
+}
+
+function setupTooltips() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            delay: { show: 500, hide: 100 }
+        });
+    });
+}
+
+function setupAnimations() {
+    // Add smooth animations to form sections
+    const formSections = document.querySelectorAll('.border-start');
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('fade-in');
+            }
+        });
+    });
+    
+    formSections.forEach((section) => {
+        observer.observe(section);
+    });
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.style.minWidth = '300px';
+    notification.style.maxWidth = '400px';
+    
+    const icon = type === 'success' ? 'check-circle' : 
+                type === 'warning' ? 'exclamation-triangle' : 
+                type === 'danger' ? 'exclamation-circle' : 'info-circle';
+    
+    notification.innerHTML = `
+        <i class="fas fa-${icon} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Global function for external use
+window.campaignManager = {
+    showNotification,
+    validateField,
+    clearFieldError
+};
 </script>
 
 <?php 

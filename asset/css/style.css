@@ -547,19 +547,145 @@ pre {
     gap: 1.5rem;
 }
 
+/* Campaign Management Specific Styles */
+.targeting-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: var(--border-radius);
+    border: 1px solid #e5e7eb;
+}
+
+.targeting-item {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 0.75rem;
+    transition: var(--transition);
+    border: 1px solid #e5e7eb;
+}
+
+.targeting-item:hover {
+    background: #f8fafc;
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.targeting-item .form-check-input:checked + .form-check-label {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+/* Enhanced Form Sections */
+.form-section {
+    border-left: 4px solid;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+    backdrop-filter: blur(5px);
+}
+
+.form-section.primary {
+    border-left-color: var(--primary-color);
+}
+
+.form-section.info {
+    border-left-color: var(--info-color);
+}
+
+.form-section.success {
+    border-left-color: var(--success-color);
+}
+
+.form-section.warning {
+    border-left-color: var(--warning-color);
+}
+
+/* Campaign Status Indicators */
+.campaign-status {
+    position: relative;
+    overflow: hidden;
+}
+
+.campaign-status::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--success-color);
+}
+
+.campaign-status.paused::before {
+    background: var(--warning-color);
+}
+
+.campaign-status.completed::before {
+    background: var(--secondary-color);
+}
+
+.campaign-status.pending::before {
+    background: var(--info-color);
+}
+
+/* Budget Progress Bars */
+.budget-progress {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.budget-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success-color), var(--warning-color));
+    transition: width 0.3s ease;
+    border-radius: 3px;
+}
+
+.budget-progress-bar.over-budget {
+    background: linear-gradient(90deg, var(--warning-color), var(--danger-color));
+}
+
 @media (max-width: 768px) {
-    .creative-grid {
+    .targeting-grid {
         grid-template-columns: 1fr;
     }
     
-    .creative-actions {
-        justify-content: center;
+    .form-section {
+        padding: 1rem;
     }
-    
-    .creative-actions .btn {
-        min-width: 70px;
-        font-size: 12px;
+}
+
+/* Advanced Animations */
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
     }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .zone-tag {
