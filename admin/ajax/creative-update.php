@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $is_rtb_campaign = ($creative['campaign_type'] == 'rtb');
         
         // Validate content based on creative type for non-RTB external campaigns
-        if (!($is_rtb_campaign && !empty($creative['endpoint_url']) && $creative_type == 'third_party')) {
+        if (!($is_rtb_campaign && !empty($creative['endpoint_url']) && ($creative_type == 'third_party' || $creative_type == 'rtb_external'))) {
             $valid_content = false;
             switch ($creative_type) {
                 case 'image':

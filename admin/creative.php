@@ -640,10 +640,16 @@ function loadCreativeForEdit(creativeId) {
     const editModal = new bootstrap.Modal(document.getElementById('editModal'));
     editModal.show();
     
+    // Add loading overlay to modal
+    const modalBody = document.querySelector('#editModal .modal-body');
+    const originalContent = modalBody.innerHTML;
+    modalBody.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading creative data...</p></div>';
+    
     // Fetch creative data
     fetch('ajax/creative-get.php?id=' + creativeId)
         .then(response => response.json())
         .then(data => {
+            modalBody.innerHTML = originalContent;
             if (data.success) {
                 populateEditForm(data.creative);
             } else {
@@ -652,9 +658,11 @@ function loadCreativeForEdit(creativeId) {
             }
         })
         .catch(error => {
+            modalBody.innerHTML = originalContent;
             showNotification('Network error: ' + error.message, 'error');
             editModal.hide();
         });
+}
 }
 
 // Populate edit form with creative data
