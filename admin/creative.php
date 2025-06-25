@@ -105,18 +105,40 @@ if ($_POST) {
         $message_type = 'danger';
     } else {
         try {
-        $name = $_POST['name'] ?? '';
-        $campaign_id_post = $_POST['campaign_id'] ?? '';
-        $width = $_POST['width'] ?? '';
-        $height = $_POST['height'] ?? '';
-        $bid_amount = $_POST['bid_amount'] ?? '';
+        // Sanitize and validate input
+        $name = trim($_POST['name'] ?? '');
+        $campaign_id_post = intval($_POST['campaign_id'] ?? 0);
+        $width = intval($_POST['width'] ?? 0);
+        $height = intval($_POST['height'] ?? 0);
+        $bid_amount = floatval($_POST['bid_amount'] ?? 0);
         $creative_type = $_POST['creative_type'] ?? 'image';
-        $image_url = $_POST['image_url'] ?? '';
-        $video_url = $_POST['video_url'] ?? '';
-        $html_content = $_POST['html_content'] ?? '';
-        $click_url = $_POST['click_url'] ?? '';
+        $image_url = trim($_POST['image_url'] ?? '');
+        $video_url = trim($_POST['video_url'] ?? '');
+        $html_content = trim($_POST['html_content'] ?? '');
+        $click_url = trim($_POST['click_url'] ?? '');
         
-        if ($name && $campaign_id_post && $width && $height && $bid_amount) {
+        // Validate required fields
+        if (empty($name) || $campaign_id_post <= 0 || $width <= 0 || $height <= 0 || $bid_amount <= 0) {
+            $message = 'Please fill in all required fields with valid values.';
+            $message_type = 'danger';
+        } else {
+            // Validate creative type
+            $valid_types = ['image', 'video', 'html5', 'third_party', 'banner_rtb', 'video_rtb', 'native_rtb', 'display_rtb'];
+            if (!in_array($creative_type, $valid_types)) {
+                $message = 'Invalid creative type selected.';
+                $message_type = 'danger';
+            } else {
+                // Validate URLs if provided
+                $url_fields = ['image_url' => $image_url, 'video_url' => $video_url, 'click_url' => $click_url];
+                foreach ($url_fields as $field => $url) {
+                    if (!empty($url) && !filter_var($url, FILTER_VALIDATE_URL)) {
+                        $message = 'Please provide a valid URL for ' . str_replace('_', ' ', $field) . '.';
+                        $message_type = 'danger';
+                        break;
+                    }
+                }
+                
+                if (!isset($message)) {
             // Get campaign type
             $stmt = $pdo->prepare("SELECT type, endpoint_url FROM campaigns WHERE id = ?");
             $stmt->execute([$campaign_id_post]);
@@ -195,9 +217,8 @@ if ($_POST) {
             $stmt = $pdo->prepare("SELECT c.*, a.name as advertiser_name FROM campaigns c LEFT JOIN advertisers a ON c.advertiser_id = a.id WHERE c.id = ?");
             $stmt->execute([$campaign_id]);
             $campaign = $stmt->fetch();
-        } else {
-            $message = 'Please fill in all required fields.';
-            $message_type = 'danger';
+                }
+            }
         }
         } catch (Exception $e) {
             $message = 'Error creating creative: ' . $e->getMessage();
@@ -877,16 +898,45 @@ document.addEventListener('DOMContentLoaded', function() {
     @media (max-width: 768px) {
         .btn-group {
             width: 100%;
+            display: flex;
         }
         
         .btn-group .btn {
             font-size: 0.8rem;
             padding: 0.375rem 0.5rem;
+            flex: 1;
         }
         
         .creative-card .card-body {
             padding: 1rem 0.75rem;
         }
+        
+        .col-lg-5, .col-lg-7 {
+            margin-bottom: 1rem;
+        }
+        
+        .btn-group .btn i {
+            font-size: 0.9rem;
+        }
+    }
+    
+    /* Add some animation to the create button */
+    .btn-primary {
+        transition: all 0.3s ease-in-out;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+    }
+    
+    /* Style for form validation feedback */
+    .was-validated .form-control:valid {
+        border-color: #198754;
+    }
+    
+    .was-validated .form-control:invalid {
+        border-color: #dc3545;
     }
 </style>
 
