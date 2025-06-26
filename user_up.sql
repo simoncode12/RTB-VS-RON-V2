@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Waktu pembuatan: 26 Jun 2025 pada 00.51
+-- Waktu pembuatan: 26 Jun 2025 pada 13.55
 -- Versi server: 11.4.5-MariaDB-deb11
 -- Versi PHP: 8.3.20
 
@@ -73,6 +73,14 @@ CREATE TABLE `bid_logs` (
   `created_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+--
+-- Dumping data untuk tabel `bid_logs`
+--
+
+INSERT INTO `bid_logs` (`id`, `request_id`, `campaign_id`, `creative_id`, `zone_id`, `bid_amount`, `win_price`, `impression_id`, `user_agent`, `ip_address`, `country`, `device_type`, `browser`, `os`, `status`, `created_at`) VALUES
+(1, 'req_685c524d30405', 7, 28, 1, 0.0001, 0.0001, 'imp_685c524d30407', NULL, NULL, NULL, NULL, NULL, NULL, 'win', '2025-06-25 19:47:25'),
+(2, 'c0ba262bbb507bdfa80dad8c5b9761fc-145855-292586', 7, 34, 1, 0.0070, 0.0035, 'imp_685c608d09ac8', NULL, NULL, NULL, NULL, NULL, NULL, 'win', '2025-06-25 20:48:13');
+
 -- --------------------------------------------------------
 
 --
@@ -85,7 +93,7 @@ CREATE TABLE `campaigns` (
   `name` varchar(255) NOT NULL,
   `type` enum('rtb','ron') NOT NULL,
   `category_id` int(11) DEFAULT NULL,
-  `bid_type` enum('cpm','cpc') DEFAULT 'cpm',
+  `bid_type` enum('cpm','cpc','cpv') DEFAULT 'cpm',
   `daily_budget` decimal(10,2) DEFAULT NULL,
   `total_budget` decimal(10,2) DEFAULT NULL,
   `daily_spent` decimal(10,2) DEFAULT 0.00,
@@ -98,6 +106,7 @@ CREATE TABLE `campaigns` (
   `target_browsers` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`target_browsers`)),
   `target_devices` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`target_devices`)),
   `target_os` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`target_os`)),
+  `ad_formats` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`ad_formats`)),
   `banner_sizes` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`banner_sizes`)),
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -107,10 +116,11 @@ CREATE TABLE `campaigns` (
 -- Dumping data untuk tabel `campaigns`
 --
 
-INSERT INTO `campaigns` (`id`, `advertiser_id`, `name`, `type`, `category_id`, `bid_type`, `daily_budget`, `total_budget`, `daily_spent`, `total_spent`, `start_date`, `end_date`, `status`, `endpoint_url`, `target_countries`, `target_browsers`, `target_devices`, `target_os`, `banner_sizes`, `created_at`, `updated_at`) VALUES
-(5, 1, 'Banner 1', 'rtb', 1, 'cpm', 1000.00, 20000.00, 0.00, 0.00, '2025-06-23', '3000-07-23', 'active', 'http://rtb.exoclick.com/rtb.php?idzone=5128252&fid=e573a1c2a656509b0112f7213359757be76929c7', NULL, NULL, NULL, NULL, '[\"300x250\",\"728x90\",\"160x600\",\"320x50\",\"300x600\",\"336x280\"]', '2025-06-23 06:19:07', '2025-06-25 16:11:03'),
-(6, 1, 'Banner ron', 'ron', 1, 'cpm', 1000.00, 20000.00, 0.00, 0.00, '2025-06-23', '3000-07-23', 'active', NULL, NULL, NULL, NULL, NULL, '[\"300x250\",\"728x90\",\"160x600\",\"320x50\",\"300x600\",\"336x280\"]', '2025-06-23 06:24:48', '2025-06-24 00:08:50'),
-(7, 1, 'Exoclick Busty', 'rtb', 1, 'cpm', NULL, NULL, 0.00, 0.00, '2025-06-25', '2025-07-25', 'active', 'http://rtb.exoclick.com/rtb.php?idzone=5123466&fid=b5677dfe2f4a21c7548abc927fac110aaa4b157b', NULL, NULL, NULL, NULL, '[\"300x250\",\"728x90\",\"160x600\",\"320x50\",\"300x600\",\"336x280\"]', '2025-06-25 15:22:24', '2025-06-25 16:12:38');
+INSERT INTO `campaigns` (`id`, `advertiser_id`, `name`, `type`, `category_id`, `bid_type`, `daily_budget`, `total_budget`, `daily_spent`, `total_spent`, `start_date`, `end_date`, `status`, `endpoint_url`, `target_countries`, `target_browsers`, `target_devices`, `target_os`, `ad_formats`, `banner_sizes`, `created_at`, `updated_at`) VALUES
+(5, 1, 'Banner 1', 'rtb', 1, 'cpm', 1000.00, 20000.00, 0.00, 0.00, '2025-06-23', '3000-07-23', 'active', 'http://rtb.exoclick.com/rtb.php?idzone=5128252&fid=e573a1c2a656509b0112f7213359757be76929c7', NULL, NULL, NULL, NULL, '[\"banner\"]', '[\"300x250\",\"728x90\",\"160x600\",\"320x50\",\"300x600\",\"336x280\"]', '2025-06-23 06:19:07', '2025-06-25 20:45:08'),
+(6, 1, 'Banner ron', 'ron', 1, 'cpm', 1000.00, 20000.00, 0.00, 0.00, '2025-06-23', '3000-07-23', 'active', NULL, NULL, NULL, NULL, NULL, '[\"banner\"]', '[\"300x250\",\"728x90\",\"160x600\",\"320x50\",\"300x600\",\"336x280\"]', '2025-06-23 06:24:48', '2025-06-26 06:50:09'),
+(7, 1, 'Exoclick Busty', 'rtb', 1, 'cpm', NULL, NULL, 0.00, 0.00, '2025-06-25', '2025-07-25', 'active', 'http://rtb.exoclick.com/rtb.php?idzone=5123466&fid=b5677dfe2f4a21c7548abc927fac110aaa4b157b', NULL, NULL, NULL, NULL, '[\"banner\"]', '[\"300x250\",\"728x90\",\"160x600\",\"320x50\",\"300x600\",\"336x280\"]', '2025-06-25 15:22:24', '2025-06-25 20:45:08'),
+(8, 1, 'Fucboob Banner', 'rtb', 1, 'cpm', NULL, NULL, 0.00, 0.00, '2025-06-25', '2031-01-25', 'active', 'http://rtb.exoclick.com/rtb.php?idzone=5123472&fid=6e4bb66dceebaae013c1bdfcde873a0e6457cb81', NULL, NULL, NULL, NULL, '[\"banner\"]', '[\"300x250\",\"728x90\",\"160x600\",\"320x50\",\"300x600\",\"336x280\"]', '2025-06-25 20:30:46', '2025-06-25 20:45:08');
 
 -- --------------------------------------------------------
 
@@ -192,7 +202,14 @@ INSERT INTO `creatives` (`id`, `campaign_id`, `name`, `width`, `height`, `bid_am
 (38, 5, '300x500', 300, 500, 0.0001, 'rtb_external', NULL, '', '', 'RTB External Creative - Content will be provided by RTB endpoint', 'https://rtb.placeholder.url', 'active', '2025-06-25 17:35:48', '2025-06-25 17:37:53', 0),
 (39, 5, '900x250', 900, 250, 0.0001, 'rtb_external', NULL, '', '', 'RTB External Creative - Content will be provided by RTB endpoint', 'https://rtb.placeholder.url', 'active', '2025-06-25 17:36:15', '2025-06-25 17:38:04', 0),
 (40, 5, '728x90', 728, 90, 0.0001, 'rtb_external', NULL, '', '', 'RTB External Creative - Content will be provided by RTB endpoint', 'https://rtb.placeholder.url', 'active', '2025-06-25 17:36:26', '2025-06-25 17:38:09', 0),
-(41, 5, '160x600', 160, 600, 0.0001, 'rtb_external', NULL, '', '', 'RTB External Creative - Content will be provided by RTB endpoint', 'https://rtb.placeholder.url', 'active', '2025-06-25 17:36:47', '2025-06-25 17:38:13', 0);
+(41, 5, '160x600', 160, 600, 0.0001, 'rtb_external', NULL, '', '', 'RTB External Creative - Content will be provided by RTB endpoint', 'https://rtb.placeholder.url', 'active', '2025-06-25 17:36:47', '2025-06-25 17:38:13', 0),
+(42, 8, '300x250 ', 300, 250, 0.0001, 'rtb_external', NULL, '', '', 'RTB External Creative - Content will be provided by RTB endpoint', 'https://rtb.placeholder.url', 'active', '2025-06-25 20:31:02', '2025-06-25 20:31:02', 0),
+(43, 8, '300x100', 300, 100, 0.0001, 'rtb_external', NULL, '', '', 'RTB External Creative - Content will be provided by RTB endpoint', 'https://rtb.placeholder.url', 'active', '2025-06-25 20:34:51', '2025-06-25 20:34:51', 0),
+(44, 8, '300x50', 300, 50, 0.0001, 'rtb_external', NULL, '', '', 'RTB External Creative - Content will be provided by RTB endpoint', 'https://rtb.placeholder.url', 'active', '2025-06-25 20:35:26', '2025-06-25 20:35:26', 0),
+(45, 8, '300x500', 300, 500, 0.0001, 'rtb_external', NULL, '', '', 'RTB External Creative - Content will be provided by RTB endpoint', 'https://rtb.placeholder.url', 'active', '2025-06-25 20:35:38', '2025-06-25 20:35:38', 0),
+(46, 8, '900x250', 900, 250, 0.0001, 'rtb_external', NULL, '', '', 'RTB External Creative - Content will be provided by RTB endpoint', 'https://rtb.placeholder.url', 'active', '2025-06-25 20:35:53', '2025-06-25 20:35:53', 0),
+(47, 8, '728x90', 728, 90, 0.0001, 'rtb_external', NULL, '', '', 'RTB External Creative - Content will be provided by RTB endpoint', 'https://rtb.placeholder.url', 'active', '2025-06-25 20:36:07', '2025-06-25 20:36:07', 0),
+(48, 8, '160x600', 160, 600, 0.0001, 'rtb_external', NULL, '', '', 'RTB External Creative - Content will be provided by RTB endpoint', 'https://rtb.placeholder.url', 'active', '2025-06-25 20:36:27', '2025-06-25 20:36:27', 0);
 
 -- --------------------------------------------------------
 
@@ -387,7 +404,8 @@ INSERT INTO `user_activity` (`id`, `user_id`, `action`, `entity_type`, `entity_i
 (22, 2, 'logout', 'session', '6tui154roeba0u4ncrp7nud7bl', '110.137.38.70', 'User logged out successfully', '2025-06-25 16:09:04'),
 (23, 2, 'login', 'session', 'haug14nk63bka7u65bd7lo5bt6', '110.137.38.70', 'User logged in successfully', '2025-06-25 16:09:07'),
 (24, 2, 'login', 'session', 'haug14nk63bka7u65bd7lo5bt6', '110.137.38.70', 'User logged in successfully', '2025-06-25 16:46:30'),
-(25, 2, 'login', 'session', 'haug14nk63bka7u65bd7lo5bt6', '110.137.38.70', 'User logged in successfully', '2025-06-25 16:47:55');
+(25, 2, 'login', 'session', 'haug14nk63bka7u65bd7lo5bt6', '110.137.38.70', 'User logged in successfully', '2025-06-25 16:47:55'),
+(26, 2, 'create', 'campaign', '8', '110.137.38.70', 'Created RTB campaign: Fucboob Banner', '2025-06-25 20:30:46');
 
 -- --------------------------------------------------------
 
@@ -505,7 +523,8 @@ ALTER TABLE `campaigns`
   ADD KEY `start_date` (`start_date`),
   ADD KEY `end_date` (`end_date`),
   ADD KEY `idx_daily_budget_spent` (`daily_budget`,`daily_spent`),
-  ADD KEY `idx_total_budget_spent` (`total_budget`,`total_spent`);
+  ADD KEY `idx_total_budget_spent` (`total_budget`,`total_spent`),
+  ADD KEY `idx_ad_formats` (`ad_formats`(100));
 
 --
 -- Indeks untuk tabel `categories`
@@ -625,13 +644,13 @@ ALTER TABLE `advertisers`
 -- AUTO_INCREMENT untuk tabel `bid_logs`
 --
 ALTER TABLE `bid_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT untuk tabel `campaigns`
 --
 ALTER TABLE `campaigns`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT untuk tabel `categories`
@@ -643,7 +662,7 @@ ALTER TABLE `categories`
 -- AUTO_INCREMENT untuk tabel `creatives`
 --
 ALTER TABLE `creatives`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT untuk tabel `daily_statistics`
@@ -667,7 +686,7 @@ ALTER TABLE `publisher_payments`
 -- AUTO_INCREMENT untuk tabel `revenue_tracking`
 --
 ALTER TABLE `revenue_tracking`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=166015;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=166016;
 
 --
 -- AUTO_INCREMENT untuk tabel `rtb_endpoints`
@@ -685,7 +704,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT untuk tabel `user_activity`
 --
 ALTER TABLE `user_activity`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT untuk tabel `user_logins`
